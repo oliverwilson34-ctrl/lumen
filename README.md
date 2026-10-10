@@ -1,41 +1,28 @@
 # Lumen
 
-**Lumen** is a Character.AI-style web app where you can chat with AI characters.
+**Lumen** is a Character.AI-style web app for chatting with AI characters and creating multi-character RPG scenarios.
 
 ## Features
-- Browse and chat with characters
+
+- **Single Character Chat** — Talk one-on-one with any character
+- **Multi-Character RPG Creation** — Build scenarios with multiple characters that can interact
+- **Light / Dark mode** toggle
+- **Black-and-white Lumen** as the signature character
 - Create your own characters
-- Persistent chats & characters (saved in your browser)
-- Clean, modern dark UI inspired by Character.AI
-- Ready to connect to a real LLM later
+- Everything saved in your browser (localStorage)
+- Clean, modern UI
 
 ## How to run
 
-1. Clone or download this repository
+1. Download or clone this repository
 2. Open `index.html` in your browser
-   (or use a simple local server: `npx serve .`)
 
-That's it — no build step required.
+No install needed.
 
 ## Connecting a real AI (optional)
 
-Right now the chat uses a simple mock response so it works offline.
-To connect a real model:
-
-1. Open `app.js`
-2. Find the `sendMessage` function
-3. Replace the mock reply with a call to your preferred API (Grok, OpenAI, Claude, etc.)
-
-Example structure is already commented in the code.
-
-## Deploy
-
-You can deploy this for free on:
-- GitHub Pages
-- Netlify
-- Vercel
-- Cloudflare Pages
+Open `app.js` and replace the mock `generateReply` function with a real API call (Grok, OpenAI, Claude, etc.). Comments in the code show how.
 
 ---
 
-Made with ❤️ for character roleplay
+Made for character roleplay & RPG storytelling

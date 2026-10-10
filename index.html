@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Lumen — Character Chat</title>
+  <title>Lumen — Character & RPG Chat</title>
   <link rel="stylesheet" href="styles.css" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -15,18 +15,29 @@
     <aside id="sidebar">
       <div class="sidebar-header">
         <div class="logo">
-          <span class="logo-icon">✨</span>
+          <span class="logo-icon">◐</span>
           <span class="logo-text">Lumen</span>
         </div>
-        <button id="new-char-btn" class="btn-primary" title="Create Character">+</button>
+        <div class="header-actions">
+          <button id="theme-toggle" class="btn-icon" title="Toggle light/dark">☼</button>
+          <button id="new-char-btn" class="btn-primary" title="Create Character">+</button>
+        </div>
+      </div>
+
+      <div class="sidebar-tabs">
+        <button class="tab active" data-tab="characters">Characters</button>
+        <button class="tab" data-tab="rpgs">RPG Scenarios</button>
       </div>
 
       <div class="search-box">
-        <input type="text" id="search-input" placeholder="Search characters..." />
+        <input type="text" id="search-input" placeholder="Search..." />
       </div>
 
-      <div id="character-list" class="character-list">
-        <!-- Characters will be rendered here -->
+      <div id="character-list" class="character-list"></div>
+      <div id="rpg-list" class="character-list hidden"></div>
+
+      <div class="sidebar-footer">
+        <button id="create-rpg-btn" class="btn-secondary full">+ Create RPG Scenario</button>
       </div>
     </aside>
 
@@ -35,10 +46,13 @@
       <!-- Empty state -->
       <div id="empty-state" class="empty-state">
         <div class="empty-content">
-          <div class="empty-icon">✨</div>
+          <div class="empty-icon">◐</div>
           <h1>Welcome to Lumen</h1>
-          <p>Select a character to start chatting, or create your own.</p>
-          <button id="create-first-btn" class="btn-primary large">Create Character</button>
+          <p>Chat with characters or create multi-character RPG scenarios.</p>
+          <div class="empty-actions">
+            <button id="create-first-btn" class="btn-primary large">Create Character</button>
+            <button id="create-rpg-first-btn" class="btn-secondary large">Create RPG Scenario</button>
+          </div>
         </div>
       </div>
 
@@ -46,13 +60,15 @@
       <div id="chat-view" class="chat-view hidden">
         <header class="chat-header">
           <div class="chat-character-info">
-            <img id="chat-avatar" src="" alt="" class="avatar" />
+            <div id="chat-avatar" class="avatar">◐</div>
             <div>
               <h2 id="chat-name"></h2>
               <p id="chat-tagline" class="tagline"></p>
             </div>
           </div>
-          <button id="back-btn" class="btn-ghost mobile-only">← Back</button>
+          <div class="chat-header-actions">
+            <button id="back-btn" class="btn-ghost mobile-only">← Back</button>
+          </div>
         </header>
 
         <div id="messages" class="messages"></div>
@@ -85,15 +101,56 @@
             </div>
             <div class="form-group">
               <label>Personality / Definition</label>
-              <textarea id="char-definition" rows="5" placeholder="Describe the character's personality, background, speaking style..."></textarea>
+              <textarea id="char-definition" rows="4" placeholder="Describe personality, background, speaking style..."></textarea>
             </div>
             <div class="form-group">
-              <label>Avatar (emoji or image URL)</label>
-              <input type="text" id="char-avatar" placeholder="✨ or https://..." value="✨" />
+              <label>Avatar (emoji)</label>
+              <input type="text" id="char-avatar" placeholder="◐" value="◐" />
             </div>
             <div class="form-actions">
               <button type="button" id="cancel-create" class="btn-ghost">Cancel</button>
-              <button type="submit" class="btn-primary">Create</button>
+              <button type="submit" class="btn-primary">Create Character</button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- Create RPG Modal -->
+      <div id="rpg-modal" class="modal hidden">
+        <div class="modal-content wide">
+          <div class="modal-header">
+            <h2>Create RPG Scenario</h2>
+            <button id="close-rpg-modal" class="btn-ghost">✕</button>
+          </div>
+          <form id="rpg-form">
+            <div class="form-group">
+              <label>Scenario Name</label>
+              <input type="text" id="rpg-name" required placeholder="e.g. The Forgotten Cathedral" />
+            </div>
+            <div class="form-group">
+              <label>Setting / Description</label>
+              <textarea id="rpg-setting" rows="3" placeholder="Describe the world, tone, and starting situation..."></textarea>
+            </div>
+            <div class="form-group">
+              <label>Opening Scene (Greeting)</label>
+              <textarea id="rpg-greeting" rows="3" placeholder="The first message that sets the scene..."></textarea>
+            </div>
+
+            <div class="form-group">
+              <label>Characters in this RPG</label>
+              <div id="rpg-characters-preview" class="rpg-chars-preview"></div>
+              <div class="rpg-add-char">
+                <select id="rpg-char-select">
+                  <option value="">— Select existing character —</option>
+                </select>
+                <button type="button" id="add-char-to-rpg" class="btn-secondary">Add</button>
+              </div>
+              <p class="hint">You can also create new characters first, then add them here.</p>
+            </div>
+
+            <div class="form-actions">
+              <button type="button" id="cancel-rpg" class="btn-ghost">Cancel</button>
+              <button type="submit" class="btn-primary">Create RPG Scenario</button>
             </div>
           </form>
         </div>
