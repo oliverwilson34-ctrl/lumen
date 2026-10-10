@@ -1,21 +1,28 @@
 # Lumen
 
-**Lumen** is a Character.AI-style web app with two creation modes:
+Character.AI-style app with:
+- **Single Character** creation (Polybuzz style)
+- **Multi-Character** scenarios (Tipsy style)
+- Black-and-white Lumen + Light/Dark mode
+- **OpenAI** powered replies
 
-- **Single Character** — inspired by Polybuzz.ai
-- **Multi-Character RPG** — inspired by Tipsy.chat
+## Setup (Important)
 
-## Features
+1. Open `index.html` in your browser
+2. Click the **Settings** button (gear icon)
+3. Paste your **OpenAI API key**
+4. Save
 
-- Black-and-white signature character **Lumen**
-- Light / Dark mode toggle
-- Polybuzz-style single character creation (Name, Gender, Intro, Greeting, Background, Tags, Public/Private)
-- Tipsy-style multi-character scenario creation (with character list, opening, background, tags)
-- Persistent characters, scenarios and chats (localStorage)
+Your key is stored only in your browser (localStorage).
+
+## Get an OpenAI API key
+
+1. Go to https://platform.openai.com/api-keys
+2. Create a new secret key
+3. Copy it and paste it into Lumen Settings
+
+Recommended model: `gpt-4o-mini` (cheap & good).
 
 ## How to run
 
-1. Download or clone this repository
-2. Open `index.html` in your browser
-
-No build step required.
+Just open `index.html`. No install needed.

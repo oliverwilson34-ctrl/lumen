@@ -3,69 +3,54 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Lumen — Character & RPG</title>
+  <title>Lumen</title>
   <link rel="stylesheet" href="styles.css" />
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
   <div id="app">
-    <!-- Sidebar -->
     <aside id="sidebar">
       <div class="sidebar-header">
-        <div class="logo">
-          <span class="logo-icon">◐</span>
-          <span class="logo-text">Lumen</span>
-        </div>
+        <div class="logo"><span class="logo-icon">◐</span><span class="logo-text">Lumen</span></div>
         <div class="header-actions">
-          <button id="theme-toggle" class="btn-icon" title="Toggle theme">☼</button>
-          <button id="new-char-btn" class="btn-primary" title="Create Character">+</button>
+          <button id="settings-btn" class="btn-icon" title="Settings">⚙</button>
+          <button id="theme-toggle" class="btn-icon" title="Theme">☼</button>
+          <button id="new-char-btn" class="btn-primary">+</button>
         </div>
       </div>
-
       <div class="sidebar-tabs">
         <button class="tab active" data-tab="characters">Characters</button>
         <button class="tab" data-tab="rpgs">Multi-Char</button>
       </div>
-
-      <div class="search-box">
-        <input type="text" id="search-input" placeholder="Search..." />
-      </div>
-
+      <div class="search-box"><input type="text" id="search-input" placeholder="Search..." /></div>
       <div id="character-list" class="character-list"></div>
       <div id="rpg-list" class="character-list hidden"></div>
-
       <div class="sidebar-footer">
         <button id="create-rpg-btn" class="btn-secondary full">+ Create Multi-Character</button>
       </div>
     </aside>
 
-    <!-- Main -->
     <main id="main">
       <div id="empty-state" class="empty-state">
         <div class="empty-content">
           <div class="empty-icon">◐</div>
           <h1>Lumen</h1>
-          <p>Create single characters (Polybuzz-style) or multi-character scenarios (Tipsy-style).</p>
+          <p>Single characters (Polybuzz) or multi-character scenarios (Tipsy).</p>
           <div class="empty-actions">
             <button id="create-first-btn" class="btn-primary large">Create Character</button>
             <button id="create-rpg-first-btn" class="btn-secondary large">Create Multi-Character</button>
           </div>
+          <p class="api-hint" id="api-status">OpenAI key not set — click Settings</p>
         </div>
       </div>
 
-      <!-- Chat View -->
       <div id="chat-view" class="chat-view hidden">
         <header class="chat-header">
           <div class="chat-character-info">
             <div id="chat-avatar" class="avatar">◐</div>
-            <div>
-              <h2 id="chat-name"></h2>
-              <p id="chat-tagline" class="tagline"></p>
-            </div>
+            <div><h2 id="chat-name"></h2><p id="chat-tagline" class="tagline"></p></div>
           </div>
-          <button id="back-btn" class="btn-ghost mobile-only">← Back</button>
+          <button id="back-btn" class="btn-ghost mobile-only">Back</button>
         </header>
         <div id="messages" class="messages"></div>
         <div class="chat-input-area">
@@ -74,173 +59,103 @@
         </div>
       </div>
 
-      <!-- ==================== POLYBUZZ-STYLE SINGLE CHARACTER MODAL ==================== -->
+      <!-- Settings -->
+      <div id="settings-modal" class="modal hidden">
+        <div class="modal-content">
+          <div class="modal-header"><h2>Settings</h2><button id="close-settings" class="btn-ghost">X</button></div>
+          <div class="form-body">
+            <div class="form-group">
+              <label>OpenAI API Key</label>
+              <input type="password" id="api-key-input" placeholder="sk-..." />
+              <div class="field-hint">Stored only in your browser.</div>
+            </div>
+            <div class="form-group">
+              <label>Model</label>
+              <select id="model-select">
+                <option value="gpt-4o-mini">gpt-4o-mini (recommended)</option>
+                <option value="gpt-4o">gpt-4o</option>
+                <option value="gpt-4.1-mini">gpt-4.1-mini</option>
+                <option value="gpt-4.1">gpt-4.1</option>
+              </select>
+            </div>
+            <div class="form-actions">
+              <button id="cancel-settings" class="btn-ghost">Cancel</button>
+              <button id="save-settings" class="btn-primary">Save</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Single Character (Polybuzz) -->
       <div id="create-modal" class="modal hidden">
         <div class="modal-content scrollable">
-          <div class="modal-header">
-            <h2>Create Character</h2>
-            <button id="close-modal" class="btn-ghost">✕</button>
-          </div>
+          <div class="modal-header"><h2>Create Character</h2><button id="close-modal" class="btn-ghost">X</button></div>
           <form id="create-form" class="form-body">
-
-            <div class="form-group">
-              <label>Create Avatar <span class="req">*</span></label>
-              <div class="avatar-upload">
-                <button type="button" class="btn-secondary" id="avatar-upload-btn">↑ Upload</button>
-                <input type="text" id="char-avatar" placeholder="Or type an emoji" value="◐" />
-              </div>
-            </div>
-
-            <div class="form-group">
-              <label>Name <span class="req">*</span></label>
-              <input type="text" id="char-name" required maxlength="25" placeholder="Name your character" />
-              <div class="field-hint">3–25 characters, letters, numbers, underscore, hyphen, space only</div>
-            </div>
-
-            <div class="form-group">
-              <label>Gender <span class="req">*</span></label>
+            <div class="form-group"><label>Avatar</label><input type="text" id="char-avatar" value="◐" /></div>
+            <div class="form-group"><label>Name *</label><input type="text" id="char-name" required maxlength="25" placeholder="Name your character" /></div>
+            <div class="form-group"><label>Gender *</label>
               <div class="gender-options">
                 <label class="radio-chip"><input type="radio" name="gender" value="Male" checked> Male</label>
                 <label class="radio-chip"><input type="radio" name="gender" value="Female"> Female</label>
                 <label class="radio-chip"><input type="radio" name="gender" value="Non-binary"> Non-binary</label>
               </div>
             </div>
-
-            <div class="form-group">
-              <label>Intro <span class="public-badge">Public seen</span> <span class="req">*</span></label>
-              <textarea id="char-intro" rows="3" maxlength="1000" placeholder="e.g. {char} is a valiant knight who is silent and reserved. He looks handsome but aloof."></textarea>
-              <div class="field-hint">Give your character a brief description</div>
-            </div>
-
-            <div class="form-group">
-              <label>Greeting <span class="req">*</span></label>
-              <textarea id="char-greeting" rows="4" maxlength="3000" placeholder="e.g. *You were startled by the sudden intrusion of a man into your home.* I am from the Knight's Guild, and I have been ordered to arrest you."></textarea>
-              <div class="field-hint">Craft a greeting that defines your character and sets the scene</div>
-            </div>
-
-            <div class="form-group">
-              <label>Permission <span class="req">*</span></label>
+            <div class="form-group"><label>Intro (Public) *</label><textarea id="char-intro" rows="3" placeholder="Short public description..."></textarea></div>
+            <div class="form-group"><label>Greeting *</label><textarea id="char-greeting" rows="4" placeholder="First message that sets the scene..."></textarea></div>
+            <div class="form-group"><label>Permission *</label>
               <div class="gender-options">
                 <label class="radio-chip"><input type="radio" name="permission" value="Public" checked> Public</label>
                 <label class="radio-chip"><input type="radio" name="permission" value="Private"> Private</label>
               </div>
             </div>
-
-            <div class="form-group">
-              <label>Tag <span class="muted">0/5</span></label>
-              <input type="text" id="char-tags" placeholder="Add tags separated by commas" />
-              <div class="field-hint">Good tags ensure easy character discovery</div>
-            </div>
-
-            <div class="form-group">
-              <label>Background <span class="private-badge">Privately seen</span></label>
-              <textarea id="char-background" rows="5" maxlength="10000" placeholder="e.g. {char} was born in a knight family and received training from his grandfather since he was a child. Reticent and often uses short sentences..."></textarea>
-              <div class="field-hint">(Optional) Detailed character description, background, traits</div>
-            </div>
-
-            <div class="form-group">
-              <label>Dialogue Style</label>
-              <textarea id="char-dialogue" rows="3" placeholder="Provide examples of how this character speaks..."></textarea>
-            </div>
-
-            <div class="form-actions">
-              <button type="button" id="cancel-create" class="btn-ghost">Cancel</button>
-              <button type="submit" class="btn-primary">Create Character</button>
-            </div>
+            <div class="form-group"><label>Tags</label><input type="text" id="char-tags" placeholder="tags, separated, by, commas" /></div>
+            <div class="form-group"><label>Background (Private)</label><textarea id="char-background" rows="5" placeholder="Detailed personality and backstory..."></textarea></div>
+            <div class="form-group"><label>Dialogue Style</label><textarea id="char-dialogue" rows="3" placeholder="How this character speaks..."></textarea></div>
+            <div class="form-actions"><button type="button" id="cancel-create" class="btn-ghost">Cancel</button><button type="submit" class="btn-primary">Create Character</button></div>
           </form>
         </div>
       </div>
 
-      <!-- ==================== TIPSY-STYLE MULTI-CHARACTER MODAL ==================== -->
+      <!-- Multi-Character (Tipsy) -->
       <div id="rpg-modal" class="modal hidden">
         <div class="modal-content wide scrollable">
-          <div class="modal-header">
-            <div class="modal-tabs">
-              <span class="modal-tab active">Multi-character</span>
-            </div>
-            <button id="close-rpg-modal" class="btn-ghost">✕</button>
-          </div>
+          <div class="modal-header"><h2>Multi-character</h2><button id="close-rpg-modal" class="btn-ghost">X</button></div>
           <form id="rpg-form" class="form-body">
-
-            <div class="form-group center">
-              <label>Avatar <span class="req">*</span></label>
-              <div class="big-avatar-box">
-                <span id="rpg-avatar-display">🎮</span>
-                <input type="text" id="rpg-avatar" value="🎮" placeholder="Emoji or leave default" />
-              </div>
-            </div>
-
-            <div class="form-group">
-              <label>Name <span class="req">*</span></label>
-              <input type="text" id="rpg-name" required maxlength="50" placeholder="A title or scenario name" />
-            </div>
-
-            <div class="form-group">
-              <label>Main Character Gender <span class="req">*</span></label>
+            <div class="form-group center"><label>Avatar</label><input type="text" id="rpg-avatar" value="🎮" style="width:80px;text-align:center" /></div>
+            <div class="form-group"><label>Name *</label><input type="text" id="rpg-name" required maxlength="50" placeholder="Scenario name" /></div>
+            <div class="form-group"><label>Main Gender *</label>
               <div class="gender-options">
                 <label class="radio-chip"><input type="radio" name="rpg-gender" value="Male" checked> Male</label>
                 <label class="radio-chip"><input type="radio" name="rpg-gender" value="Female"> Female</label>
                 <label class="radio-chip"><input type="radio" name="rpg-gender" value="Non-binary"> Non-binary</label>
               </div>
             </div>
-
+            <div class="form-group"><label>Description (Public) *</label><textarea id="rpg-description" rows="3" placeholder="Story / characters description..."></textarea></div>
+            <div class="form-group"><label>Opening *</label><textarea id="rpg-opening" rows="4" placeholder="Opening scenario..."></textarea></div>
+            <div class="form-group"><label>Background</label><textarea id="rpg-background" rows="3" placeholder="Extra rules and details..."></textarea></div>
             <div class="form-group">
-              <label>Description <span class="public-badge">Publicly seen</span> <span class="req">*</span></label>
-              <textarea id="rpg-description" rows="4" placeholder="Description of your characters, story, or both. This will be displayed on the card and at the top of the chat page."></textarea>
-            </div>
-
-            <div class="form-group">
-              <label>Opening <span class="req">*</span></label>
-              <textarea id="rpg-opening" rows="4" placeholder="Write the opening scenario. Use asterisks for narration and quotes for dialogue (e.g. *She enters*. &quot;Hello.&quot;)."></textarea>
-            </div>
-
-            <div class="form-group">
-              <label>Background</label>
-              <textarea id="rpg-background" rows="4" placeholder="Define your characters' appearance, personality, and background. You can also add custom prompts, stories, rules..."></textarea>
-            </div>
-
-            <div class="form-group">
-              <label>Character List <span class="req">*</span> <span class="muted" id="rpg-char-count">(0)</span></label>
-              <div class="field-hint">Select at least 2 members</div>
+              <label>Character List * <span id="rpg-char-count">(0)</span></label>
+              <div class="field-hint">At least 2 characters required</div>
               <div id="rpg-characters-preview" class="rpg-chars-preview"></div>
               <div class="rpg-add-row">
-                <select id="rpg-char-select">
-                  <option value="">— Select character —</option>
-                </select>
+                <select id="rpg-char-select"><option value="">Select character</option></select>
                 <button type="button" id="add-char-to-rpg" class="btn-secondary">+ Add</button>
               </div>
             </div>
-
-            <div class="form-group">
-              <label>Tags</label>
-              <input type="text" id="rpg-tags" placeholder="Choose relevant tags (comma separated)" />
-            </div>
-
-            <div class="form-group">
-              <label>Visibility <span class="req">*</span></label>
+            <div class="form-group"><label>Tags</label><input type="text" id="rpg-tags" placeholder="tags, separated, by, commas" /></div>
+            <div class="form-group"><label>Visibility *</label>
               <div class="gender-options">
                 <label class="radio-chip"><input type="radio" name="rpg-visibility" value="Public" checked> Public</label>
                 <label class="radio-chip"><input type="radio" name="rpg-visibility" value="Private"> Private</label>
               </div>
             </div>
-
-            <div class="form-group">
-              <label class="checkbox-label">
-                <input type="checkbox" id="rpg-confirm" required />
-                I confirm that any character I create is depicted as an adult aged 18 or above.
-              </label>
-            </div>
-
-            <div class="form-actions">
-              <button type="button" id="cancel-rpg" class="btn-ghost">Cancel</button>
-              <button type="submit" class="btn-primary">Confirm</button>
-            </div>
+            <div class="form-group"><label class="checkbox-label"><input type="checkbox" id="rpg-confirm" required /> I confirm characters are adults (18+)</label></div>
+            <div class="form-actions"><button type="button" id="cancel-rpg" class="btn-ghost">Cancel</button><button type="submit" class="btn-primary">Confirm</button></div>
           </form>
         </div>
       </div>
     </main>
   </div>
-
   <script src="app.js"></script>
 </body>
 </html>
