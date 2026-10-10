@@ -31,26 +31,39 @@
     </aside>
 
     <main id="main">
-      <div id="empty-state" class="empty-state">
-        <div class="empty-content">
-          <div class="empty-icon">◐</div>
-          <h1>Lumen</h1>
-          <p>Single characters (Polybuzz) or multi-character scenarios (Tipsy).</p>
-          <div class="empty-actions">
-            <button id="create-first-btn" class="btn-primary large">Create Character</button>
-            <button id="create-rpg-first-btn" class="btn-secondary large">Create Multi-Character</button>
+      <!-- HOME SCREEN -->
+      <div id="home-screen" class="home-screen">
+        <div class="home-content">
+          <div class="home-hero">
+            <div class="home-logo">◐</div>
+            <h1>Lumen</h1>
+            <p class="home-subtitle">Talk to characters. Create worlds.</p>
           </div>
+
+          <div class="home-featured">
+            <h2>Featured</h2>
+            <div class="featured-grid" id="featured-grid">
+              <!-- filled by JS -->
+            </div>
+          </div>
+
+          <div class="home-actions">
+            <button id="home-create-char" class="btn-primary large">Create Character</button>
+            <button id="home-create-rpg" class="btn-secondary large">Create Multi-Character</button>
+          </div>
+
           <p class="api-hint" id="api-status">No API key set — click Settings</p>
         </div>
       </div>
 
+      <!-- CHAT VIEW -->
       <div id="chat-view" class="chat-view hidden">
         <header class="chat-header">
           <div class="chat-character-info">
             <div id="chat-avatar" class="avatar">◐</div>
             <div><h2 id="chat-name"></h2><p id="chat-tagline" class="tagline"></p></div>
           </div>
-          <button id="back-btn" class="btn-ghost mobile-only">Back</button>
+          <button id="back-btn" class="btn-ghost">← Back</button>
         </header>
         <div id="messages" class="messages"></div>
         <div class="chat-input-area">
@@ -79,9 +92,7 @@
             </div>
             <div class="form-group">
               <label>Model</label>
-              <select id="model-select">
-                <!-- filled by JS -->
-              </select>
+              <select id="model-select"></select>
             </div>
             <div class="form-actions">
               <button id="cancel-settings" class="btn-ghost">Cancel</button>
@@ -91,7 +102,7 @@
         </div>
       </div>
 
-      <!-- Single Character -->
+      <!-- Single Character Modal -->
       <div id="create-modal" class="modal hidden">
         <div class="modal-content scrollable">
           <div class="modal-header"><h2>Create Character</h2><button id="close-modal" class="btn-ghost">X</button></div>
@@ -121,7 +132,7 @@
         </div>
       </div>
 
-      <!-- Multi-Character -->
+      <!-- Multi-Character Modal -->
       <div id="rpg-modal" class="modal hidden">
         <div class="modal-content wide scrollable">
           <div class="modal-header"><h2>Multi-character</h2><button id="close-rpg-modal" class="btn-ghost">X</button></div>
