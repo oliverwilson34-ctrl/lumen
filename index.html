@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lumen — Character Chat</title>
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div id="app">
+    <!-- Sidebar -->
+    <aside id="sidebar">
+      <div class="sidebar-header">
+        <div class="logo">
+          <span class="logo-icon">✨</span>
+          <span class="logo-text">Lumen</span>
+        </div>
+        <button id="new-char-btn" class="btn-primary" title="Create Character">+</button>
+      </div>
+
+      <div class="search-box">
+        <input type="text" id="search-input" placeholder="Search characters..." />
+      </div>
+
+      <div id="character-list" class="character-list">
+        <!-- Characters will be rendered here -->
+      </div>
+    </aside>
+
+    <!-- Main content -->
+    <main id="main">
+      <!-- Empty state -->
+      <div id="empty-state" class="empty-state">
+        <div class="empty-content">
+          <div class="empty-icon">✨</div>
+          <h1>Welcome to Lumen</h1>
+          <p>Select a character to start chatting, or create your own.</p>
+          <button id="create-first-btn" class="btn-primary large">Create Character</button>
+        </div>
+      </div>
+
+      <!-- Chat view -->
+      <div id="chat-view" class="chat-view hidden">
+        <header class="chat-header">
+          <div class="chat-character-info">
+            <img id="chat-avatar" src="" alt="" class="avatar" />
+            <div>
+              <h2 id="chat-name"></h2>
+              <p id="chat-tagline" class="tagline"></p>
+            </div>
+          </div>
+          <button id="back-btn" class="btn-ghost mobile-only">← Back</button>
+        </header>
+
+        <div id="messages" class="messages"></div>
+
+        <div class="chat-input-area">
+          <textarea id="message-input" placeholder="Type a message..." rows="1"></textarea>
+          <button id="send-btn" class="btn-primary send-btn">Send</button>
+        </div>
+      </div>
+
+      <!-- Create Character Modal -->
+      <div id="create-modal" class="modal hidden">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h2>Create Character</h2>
+            <button id="close-modal" class="btn-ghost">✕</button>
+          </div>
+          <form id="create-form">
+            <div class="form-group">
+              <label>Name</label>
+              <input type="text" id="char-name" required placeholder="e.g. Lumen" />
+            </div>
+            <div class="form-group">
+              <label>Tagline</label>
+              <input type="text" id="char-tagline" placeholder="A short description" />
+            </div>
+            <div class="form-group">
+              <label>Greeting</label>
+              <textarea id="char-greeting" rows="3" placeholder="The first message the character will say..."></textarea>
+            </div>
+            <div class="form-group">
+              <label>Personality / Definition</label>
+              <textarea id="char-definition" rows="5" placeholder="Describe the character's personality, background, speaking style..."></textarea>
+            </div>
+            <div class="form-group">
+              <label>Avatar (emoji or image URL)</label>
+              <input type="text" id="char-avatar" placeholder="✨ or https://..." value="✨" />
+            </div>
+            <div class="form-actions">
+              <button type="button" id="cancel-create" class="btn-ghost">Cancel</button>
+              <button type="submit" class="btn-primary">Create</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
