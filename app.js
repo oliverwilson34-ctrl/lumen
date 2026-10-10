@@ -1,4 +1,4 @@
-// Lumen - Supports Google Gemini (free), Groq (free), OpenAI
+// Lumen - Supports Google Gemini (free), Groq (free), OpenAI + Home Screen
 
 const PROVIDERS = {
   gemini: {
@@ -86,7 +86,7 @@ let selectedModel = localStorage.getItem('lumen_model') || 'gemini-2.5-flash';
 
 const characterListEl = document.getElementById('character-list');
 const rpgListEl = document.getElementById('rpg-list');
-const emptyState = document.getElementById('empty-state');
+const homeScreen = document.getElementById('home-screen');
 const chatView = document.getElementById('chat-view');
 const messagesEl = document.getElementById('messages');
 const messageInput = document.getElementById('message-input');
@@ -100,6 +100,7 @@ const apiStatus = document.getElementById('api-status');
 const providerSelect = document.getElementById('provider-select');
 const modelSelect = document.getElementById('model-select');
 const keyHint = document.getElementById('key-hint');
+const featuredGrid = document.getElementById('featured-grid');
 
 function updateApiStatus() {
   if (!apiStatus) return;
@@ -123,7 +124,6 @@ function fillModels() {
     opt.textContent = m.label;
     modelSelect.appendChild(opt);
   });
-  // keep previous model if still valid, else first
   if (prov.models.some(m => m.id === selectedModel)) {
     modelSelect.value = selectedModel;
   } else {
@@ -167,6 +167,23 @@ function saveData() {
   localStorage.setItem('lumen_chats', JSON.stringify(chats));
 }
 
+function renderFeatured() {
+  if (!featuredGrid) return;
+  featuredGrid.innerHTML = '';
+  // Show first 3 characters as featured
+  characters.slice(0, 3).forEach(char => {
+    const card = document.createElement('div');
+    card.className = 'featured-card';
+    card.innerHTML = `
+      <div class="f-avatar">${char.avatar || '\u25d0'}</div>
+      <h3>${escapeHtml(char.name)}</h3>
+      <p>${escapeHtml((char.intro || '').slice(0, 60))}${(char.intro||'').length > 60 ? '...' : ''}</p>
+    `;
+    card.onclick = () => openChat({ type: 'character', data: char });
+    featuredGrid.appendChild(card);
+  });
+}
+
 function renderCharacterList(filter = '') {
   if (!characterListEl) return;
   characterListEl.innerHTML = '';
@@ -206,9 +223,19 @@ function switchTab(tab) {
   else renderRpgList(searchInput.value);
 }
 
+function showHome() {
+  currentItem = null;
+  homeScreen.classList.remove('hidden');
+  chatView.classList.add('hidden');
+  document.getElementById('sidebar').classList.remove('hidden-mobile');
+  renderFeatured();
+  renderCharacterList();
+  renderRpgList();
+}
+
 function openChat(item) {
   currentItem = item;
-  emptyState.classList.add('hidden');
+  homeScreen.classList.add('hidden');
   chatView.classList.remove('hidden');
   const data = item.data;
   document.getElementById('chat-name').textContent = data.name;
@@ -363,6 +390,7 @@ function createCharacter(data) {
   characters.unshift({ id, ...data });
   saveData();
   renderCharacterList();
+  renderFeatured();
   populateRpgSelect();
   openChat({ type: 'character', data: characters[0] });
   closeModal();
@@ -460,14 +488,17 @@ document.getElementById('save-settings').onclick = () => {
 };
 
 document.getElementById('new-char-btn').onclick = openModal;
-document.getElementById('create-first-btn').onclick = openModal;
+document.getElementById('home-create-char').onclick = openModal;
 document.getElementById('close-modal').onclick = closeModal;
 document.getElementById('cancel-create').onclick = closeModal;
 
 document.getElementById('create-rpg-btn').onclick = openRpgModal;
-document.getElementById('create-rpg-first-btn').onclick = openRpgModal;
+document.getElementById('home-create-rpg').onclick = openRpgModal;
 document.getElementById('close-rpg-modal').onclick = closeRpgModal;
 document.getElementById('cancel-rpg').onclick = closeRpgModal;
+
+// Logo click goes home
+document.querySelector('.logo').onclick = showHome;
 
 document.getElementById('create-form').onsubmit = (e) => {
   e.preventDefault();
@@ -520,13 +551,9 @@ searchInput.oninput = () => {
   if (activeTab === 'characters') renderCharacterList(searchInput.value);
   else renderRpgList(searchInput.value);
 };
-document.getElementById('back-btn').onclick = () => {
-  chatView.classList.add('hidden');
-  emptyState.classList.remove('hidden');
-  document.getElementById('sidebar').classList.remove('hidden-mobile');
-  currentItem = null;
-};
+document.getElementById('back-btn').onclick = showHome;
 
 loadData();
+renderFeatured();
 renderCharacterList();
 renderRpgList();
