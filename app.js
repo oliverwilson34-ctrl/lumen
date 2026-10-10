@@ -1,4 +1,4 @@
-// Lumen - Polybuzz-style single + Tipsy-style multi-character
+// Lumen - OpenAI powered Character & Multi-character app
 
 const DEFAULT_CHARACTERS = [
   {
@@ -6,12 +6,12 @@ const DEFAULT_CHARACTERS = [
     name: 'Lumen',
     gender: 'Non-binary',
     intro: 'A presence of pure light and shadow that exists between silence and memory.',
-    greeting: 'The world falls silent for a moment.\n\nA figure of stark black and white light stands before you — edges sharp, glow soft.\n\n"You found the space between."\n\nIts voice is calm, almost weightless. "Speak. I am listening."',
-    background: 'Lumen is a black-and-white entity of living light and shadow. It speaks with quiet precision, uses minimal but poetic language, and observes more than it judges. It never raises its voice. It is neither fully kind nor cold — simply present.',
+    greeting: 'The world falls silent for a moment.\n\nA figure of stark black and white light stands before you \u2014 edges sharp, glow soft.\n\n"You found the space between."\n\nIts voice is calm, almost weightless. "Speak. I am listening."',
+    background: 'Lumen is a black-and-white entity of living light and shadow. It speaks with quiet precision, uses minimal but poetic language, and observes more than it judges. It never raises its voice. It is neither fully kind nor cold \u2014 simply present. It often refers to light, contrast, silence, and memory.',
     tags: 'mysterious, non-human, poetic',
     dialogue: 'Short, measured sentences. Soft metaphors about light and contrast.',
     permission: 'Public',
-    avatar: '◐',
+    avatar: '\u25d0'
   },
   {
     id: 'aria',
@@ -23,7 +23,7 @@ const DEFAULT_CHARACTERS = [
     tags: 'companion, wholesome, late-night',
     dialogue: '',
     permission: 'Public',
-    avatar: '🌙',
+    avatar: '\ud83c\udf19'
   },
   {
     id: 'kael',
@@ -35,7 +35,7 @@ const DEFAULT_CHARACTERS = [
     tags: 'tsundere, strategist, cold',
     dialogue: '',
     permission: 'Public',
-    avatar: '⚔️',
+    avatar: '\u2694\ufe0f'
   }
 ];
 
@@ -46,6 +46,8 @@ let chats = {};
 let currentTheme = 'dark';
 let activeTab = 'characters';
 let tempRpgChars = [];
+let apiKey = localStorage.getItem('lumen_openai_key') || '';
+let selectedModel = localStorage.getItem('lumen_model') || 'gpt-4o-mini';
 
 const characterListEl = document.getElementById('character-list');
 const rpgListEl = document.getElementById('rpg-list');
@@ -56,34 +58,47 @@ const messageInput = document.getElementById('message-input');
 const sendBtn = document.getElementById('send-btn');
 const createModal = document.getElementById('create-modal');
 const rpgModal = document.getElementById('rpg-modal');
+const settingsModal = document.getElementById('settings-modal');
 const searchInput = document.getElementById('search-input');
 const themeToggle = document.getElementById('theme-toggle');
+const apiStatus = document.getElementById('api-status');
+
+function updateApiStatus() {
+  if (!apiStatus) return;
+  if (apiKey) {
+    apiStatus.textContent = '\u2713 OpenAI connected';
+    apiStatus.style.color = '#6d6';
+  } else {
+    apiStatus.textContent = 'OpenAI key not set \u2014 click Settings';
+    apiStatus.style.color = '';
+  }
+}
 
 function applyTheme(theme) {
   currentTheme = theme;
   document.documentElement.setAttribute('data-theme', theme);
-  themeToggle.textContent = theme === 'dark' ? '☼' : '☾';
+  if (themeToggle) themeToggle.textContent = theme === 'dark' ? '\u263c' : '\u263e';
   localStorage.setItem('lumen_theme', theme);
 }
 function toggleTheme() { applyTheme(currentTheme === 'dark' ? 'light' : 'dark'); }
 
 function loadData() {
-  const savedChars = localStorage.getItem('lumen_characters');
-  const savedRpgs = localStorage.getItem('lumen_rpgs');
-  const savedChats = localStorage.getItem('lumen_chats');
-  const savedTheme = localStorage.getItem('lumen_theme');
-
-  characters = savedChars ? JSON.parse(savedChars) : [...DEFAULT_CHARACTERS];
-  rpgs = savedRpgs ? JSON.parse(savedRpgs) : [];
-  chats = savedChats ? JSON.parse(savedChats) : {};
-
+  try {
+    characters = JSON.parse(localStorage.getItem('lumen_characters')) || [...DEFAULT_CHARACTERS];
+    rpgs = JSON.parse(localStorage.getItem('lumen_rpgs')) || [];
+    chats = JSON.parse(localStorage.getItem('lumen_chats')) || {};
+  } catch(e) {
+    characters = [...DEFAULT_CHARACTERS];
+    rpgs = [];
+    chats = {};
+  }
   DEFAULT_CHARACTERS.forEach(def => {
     if (!characters.find(c => c.id === def.id)) characters.unshift(def);
   });
   const lumen = characters.find(c => c.id === 'lumen');
   if (lumen) Object.assign(lumen, DEFAULT_CHARACTERS[0]);
-
-  applyTheme(savedTheme || 'dark');
+  applyTheme(localStorage.getItem('lumen_theme') || 'dark');
+  updateApiStatus();
   saveData();
 }
 
@@ -94,46 +109,31 @@ function saveData() {
 }
 
 function renderCharacterList(filter = '') {
+  if (!characterListEl) return;
   characterListEl.innerHTML = '';
-  const filtered = characters.filter(c =>
-    c.name.toLowerCase().includes(filter.toLowerCase()) ||
-    (c.intro || '').toLowerCase().includes(filter.toLowerCase())
-  );
-  filtered.forEach(char => {
-    const card = document.createElement('div');
-    card.className = 'character-card' + (currentItem?.type === 'character' && currentItem.data.id === char.id ? ' active' : '');
-    card.innerHTML = `
-      <div class="avatar">${char.avatar || '◐'}</div>
-      <div class="info">
-        <h3>${escapeHtml(char.name)}</h3>
-        <p>${escapeHtml(char.intro || char.tagline || '')}</p>
-      </div>`;
-    card.onclick = () => openChat({ type: 'character', data: char });
-    characterListEl.appendChild(card);
-  });
+  characters.filter(c => c.name.toLowerCase().includes(filter.toLowerCase()) || (c.intro||'').toLowerCase().includes(filter.toLowerCase()))
+    .forEach(char => {
+      const card = document.createElement('div');
+      card.className = 'character-card' + (currentItem?.type==='character' && currentItem.data.id===char.id ? ' active' : '');
+      card.innerHTML = `<div class="avatar">${char.avatar||'\u25d0'}</div><div class="info"><h3>${escapeHtml(char.name)}</h3><p>${escapeHtml(char.intro||'')}</p></div>`;
+      card.onclick = () => openChat({type:'character', data:char});
+      characterListEl.appendChild(card);
+    });
 }
 
 function renderRpgList(filter = '') {
+  if (!rpgListEl) return;
   rpgListEl.innerHTML = '';
-  const filtered = rpgs.filter(r =>
-    r.name.toLowerCase().includes(filter.toLowerCase()) ||
-    (r.description || '').toLowerCase().includes(filter.toLowerCase())
-  );
+  const filtered = rpgs.filter(r => r.name.toLowerCase().includes(filter.toLowerCase()) || (r.description||'').toLowerCase().includes(filter.toLowerCase()));
   if (!filtered.length) {
-    rpgListEl.innerHTML = `<p style="padding:20px;color:var(--text-muted);font-size:0.85rem;text-align:center;">No multi-character scenarios yet.</p>`;
+    rpgListEl.innerHTML = '<p style="padding:20px;color:var(--text-muted);font-size:0.85rem;text-align:center;">No multi-character scenarios yet.</p>';
     return;
   }
   filtered.forEach(rpg => {
     const card = document.createElement('div');
-    card.className = 'character-card' + (currentItem?.type === 'rpg' && currentItem.data.id === rpg.id ? ' active' : '');
-    card.innerHTML = `
-      <div class="avatar">${rpg.avatar || '🎮'}</div>
-      <div class="info">
-        <h3>${escapeHtml(rpg.name)}</h3>
-        <p>${escapeHtml((rpg.description || '').slice(0, 40))}...</p>
-      </div>
-      <span class="badge">${rpg.characterIds?.length || 0}</span>`;
-    card.onclick = () => openChat({ type: 'rpg', data: rpg });
+    card.className = 'character-card' + (currentItem?.type==='rpg' && currentItem.data.id===rpg.id ? ' active' : '');
+    card.innerHTML = `<div class="avatar">${rpg.avatar||'\ud83c\udfae'}</div><div class="info"><h3>${escapeHtml(rpg.name)}</h3><p>${escapeHtml((rpg.description||'').slice(0,40))}...</p></div><span class="badge">${rpg.characterIds?.length||0}</span>`;
+    card.onclick = () => openChat({type:'rpg', data:rpg});
     rpgListEl.appendChild(card);
   });
 }
@@ -143,7 +143,6 @@ function switchTab(tab) {
   document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
   characterListEl.classList.toggle('hidden', tab !== 'characters');
   rpgListEl.classList.toggle('hidden', tab !== 'rpgs');
-  searchInput.placeholder = tab === 'characters' ? 'Search characters...' : 'Search scenarios...';
   if (tab === 'characters') renderCharacterList(searchInput.value);
   else renderRpgList(searchInput.value);
 }
@@ -152,20 +151,13 @@ function openChat(item) {
   currentItem = item;
   emptyState.classList.add('hidden');
   chatView.classList.remove('hidden');
-
   const data = item.data;
   document.getElementById('chat-name').textContent = data.name;
-  document.getElementById('chat-tagline').textContent =
-    item.type === 'rpg' ? (data.description?.slice(0, 55) || 'Multi-character') : (data.intro || '');
-  document.getElementById('chat-avatar').textContent = item.type === 'rpg' ? (data.avatar || '🎮') : (data.avatar || '◐');
-
+  document.getElementById('chat-tagline').textContent = item.type === 'rpg' ? (data.description?.slice(0,55) || 'Multi-character') : (data.intro || '');
+  document.getElementById('chat-avatar').textContent = item.type === 'rpg' ? (data.avatar || '\ud83c\udfae') : (data.avatar || '\u25d0');
   const key = item.type + ':' + data.id;
   if (!chats[key]) {
-    chats[key] = [{
-      role: 'assistant',
-      content: data.greeting || data.opening || `Welcome to ${data.name}.`,
-      speaker: item.type === 'rpg' ? 'Narrator' : data.name
-    }];
+    chats[key] = [{role:'assistant', content: data.greeting || data.opening || 'Welcome.', speaker: item.type==='rpg' ? 'Narrator' : data.name}];
     saveData();
   }
   renderMessages();
@@ -180,14 +172,9 @@ function renderMessages() {
   const key = currentItem.type + ':' + currentItem.data.id;
   (chats[key] || []).forEach(msg => {
     const div = document.createElement('div');
-    div.className = `message ${msg.role === 'user' ? 'user' : 'bot'}`;
-    const avatar = msg.role === 'user' ? '👤' : (currentItem.type === 'rpg' ? '🎮' : currentItem.data.avatar);
-    div.innerHTML = `
-      <div class="msg-avatar">${avatar}</div>
-      <div>
-        ${msg.role !== 'user' && currentItem.type === 'rpg' ? `<div class="speaker-name">${escapeHtml(msg.speaker || '')}</div>` : ''}
-        <div class="bubble">${escapeHtml(msg.content)}</div>
-      </div>`;
+    div.className = 'message ' + (msg.role === 'user' ? 'user' : 'bot');
+    const avatar = msg.role === 'user' ? '\ud83d\udc64' : (currentItem.type === 'rpg' ? '\ud83c\udfae' : currentItem.data.avatar);
+    div.innerHTML = `<div class="msg-avatar">${avatar}</div><div>${msg.role !== 'user' && currentItem.type === 'rpg' ? `<div class="speaker-name">${escapeHtml(msg.speaker||'')}</div>` : ''}<div class="bubble">${escapeHtml(msg.content)}</div></div>`;
     messagesEl.appendChild(div);
   });
   messagesEl.scrollTop = messagesEl.scrollHeight;
@@ -201,8 +188,13 @@ function escapeHtml(t) {
 async function sendMessage() {
   const text = messageInput.value.trim();
   if (!text || !currentItem) return;
+  if (!apiKey) {
+    alert('Please set your OpenAI API key first.\nClick the Settings button.');
+    openSettings();
+    return;
+  }
   const key = currentItem.type + ':' + currentItem.data.id;
-  chats[key].push({ role: 'user', content: text });
+  chats[key].push({role:'user', content:text});
   messageInput.value = '';
   messageInput.style.height = 'auto';
   renderMessages();
@@ -211,74 +203,126 @@ async function sendMessage() {
   const typing = document.createElement('div');
   typing.className = 'message bot';
   typing.id = 'typing';
-  typing.innerHTML = `<div class="msg-avatar">${currentItem.type === 'rpg' ? '🎮' : currentItem.data.avatar}</div><div class="bubble">...</div>`;
+  typing.innerHTML = `<div class="msg-avatar">${currentItem.type==='rpg'?'\ud83c\udfae':currentItem.data.avatar}</div><div class="bubble">...</div>`;
   messagesEl.appendChild(typing);
   messagesEl.scrollTop = messagesEl.scrollHeight;
 
-  const reply = await generateReply(currentItem, chats[key]);
-  document.getElementById('typing')?.remove();
-
-  if (Array.isArray(reply)) {
-    reply.forEach(r => chats[key].push({ role: 'assistant', content: r.content, speaker: r.speaker }));
-  } else {
-    chats[key].push({ role: 'assistant', content: reply, speaker: currentItem.data.name });
+  try {
+    const reply = await generateReply(currentItem, chats[key]);
+    document.getElementById('typing')?.remove();
+    if (Array.isArray(reply)) {
+      reply.forEach(r => chats[key].push({role:'assistant', content:r.content, speaker:r.speaker}));
+    } else {
+      chats[key].push({role:'assistant', content:reply, speaker:currentItem.data.name});
+    }
+    renderMessages();
+    saveData();
+  } catch (err) {
+    document.getElementById('typing')?.remove();
+    alert('Error: ' + (err.message || err));
+    console.error(err);
   }
-  renderMessages();
-  saveData();
 }
 
 async function generateReply(item, history) {
-  await new Promise(r => setTimeout(r, 700 + Math.random() * 500));
-  const last = history.filter(m => m.role === 'user').pop()?.content || '';
+  const data = item.data;
+  let systemPrompt = '';
 
   if (item.type === 'character') {
-    if (item.data.id === 'lumen') {
-      const opts = [
-        `The light shifts slightly.\n\n"${last.slice(0,45)}${last.length>45?'...':''}"... noted."\n\nA quiet pause. "Continue."`,
-        `*the contrast deepens*\n\nI see the shape of what you mean.`,
-        `Silence holds for a breath.\n\n"That is not nothing."`,
-      ];
-      return opts[Math.floor(Math.random()*opts.length)];
-    }
-    return `I hear you... Tell me more.`;
+    systemPrompt = `You are ${data.name}.
+Gender: ${data.gender || 'Unknown'}
+Intro: ${data.intro || ''}
+Background / Personality: ${data.background || ''}
+Dialogue style: ${data.dialogue || ''}
+
+Stay completely in character. Write naturally. Use *asterisks* for actions when appropriate. Do not break character or mention you are an AI.`;
+  } else {
+    const involved = characters.filter(c => (data.characterIds || []).includes(c.id));
+    const charDescriptions = involved.map(c => `- ${c.name} (${c.gender}): ${c.intro || ''} | Personality: ${c.background || c.dialogue || 'N/A'}`).join('\n');
+    systemPrompt = `You are narrating a multi-character roleplay scenario called "${data.name}".
+
+Scenario description: ${data.description || ''}
+Background / Rules: ${data.background || ''}
+
+Characters present:
+${charDescriptions}
+
+When responding, have 1 or 2 characters speak/react. Format each character's part exactly like this:
+
+**CharacterName**:
+Their dialogue and actions.
+
+Keep responses immersive and in-character. Use *asterisks* for actions.`;
   }
 
-  // Multi-character
-  const involved = characters.filter(c => (item.data.characterIds || []).includes(c.id));
-  if (!involved.length) return { content: `*The scene continues...*\n\nWhat will you do next?`, speaker: 'Narrator' };
-  const responders = involved.sort(() => Math.random()-0.5).slice(0, Math.min(2, involved.length));
-  return responders.map(c => ({
-    speaker: c.name,
-    content: c.id === 'lumen' ? `*light flickers*\n\n"...Interesting."` : `*looks toward you*\n\n"I'm with you."`
-  }));
+  const messages = [
+    { role: 'system', content: systemPrompt },
+    ...history.slice(-12).map(m => ({
+      role: m.role === 'assistant' ? 'assistant' : 'user',
+      content: m.speaker && m.role === 'assistant' ? `${m.speaker}: ${m.content}` : m.content
+    }))
+  ];
+
+  const res = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer ' + apiKey
+    },
+    body: JSON.stringify({
+      model: selectedModel,
+      messages,
+      temperature: 0.85,
+      max_tokens: 600
+    })
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error?.message || 'OpenAI error ' + res.status);
+  }
+
+  const json = await res.json();
+  const content = json.choices?.[0]?.message?.content?.trim() || '...';
+
+  if (item.type === 'rpg') {
+    const parts = [];
+    const regex = /\*\*([^*]+)\*\*:?\s*([\s\S]*?)(?=\*\*[^*]+\*\*:|$)/g;
+    let match;
+    while ((match = regex.exec(content)) !== null) {
+      parts.push({ speaker: match[1].trim(), content: match[2].trim() });
+    }
+    if (parts.length > 0) return parts;
+    return [{ speaker: 'Narrator', content }];
+  }
+  return content;
 }
 
 function createCharacter(data) {
   const id = data.name.toLowerCase().replace(/[^a-z0-9]+/g, '-') + '-' + Date.now();
-  const newChar = { id, ...data };
-  characters.unshift(newChar);
+  characters.unshift({ id, ...data });
   saveData();
   renderCharacterList();
   populateRpgSelect();
-  openChat({ type: 'character', data: newChar });
+  openChat({ type: 'character', data: characters[0] });
   closeModal();
 }
 
 function createRpg(data) {
   const id = 'rpg-' + Date.now();
-  const newRpg = { id, ...data, characterIds: [...tempRpgChars] };
-  rpgs.unshift(newRpg);
+  rpgs.unshift({ id, ...data, characterIds: [...tempRpgChars] });
   saveData();
   tempRpgChars = [];
   switchTab('rpgs');
   renderRpgList();
-  openChat({ type: 'rpg', data: newRpg });
+  openChat({ type: 'rpg', data: rpgs[0] });
   closeRpgModal();
 }
 
 function populateRpgSelect() {
   const select = document.getElementById('rpg-char-select');
-  select.innerHTML = '<option value="">— Select character —</option>';
+  if (!select) return;
+  select.innerHTML = '<option value="">Select character</option>';
   characters.forEach(c => {
     const opt = document.createElement('option');
     opt.value = c.id;
@@ -290,14 +334,15 @@ function populateRpgSelect() {
 function renderTempRpgChars() {
   const preview = document.getElementById('rpg-characters-preview');
   const countEl = document.getElementById('rpg-char-count');
+  if (!preview) return;
   preview.innerHTML = '';
-  countEl.textContent = `(${tempRpgChars.length})`;
+  if (countEl) countEl.textContent = '(' + tempRpgChars.length + ')';
   tempRpgChars.forEach(id => {
     const char = characters.find(c => c.id === id);
     if (!char) return;
     const chip = document.createElement('div');
     chip.className = 'rpg-char-chip';
-    chip.innerHTML = `${char.avatar} ${escapeHtml(char.name)} <button type="button">✕</button>`;
+    chip.innerHTML = char.avatar + ' ' + escapeHtml(char.name) + ' <button type="button">X</button>';
     chip.querySelector('button').onclick = () => {
       tempRpgChars = tempRpgChars.filter(x => x !== id);
       renderTempRpgChars();
@@ -310,7 +355,7 @@ function openModal() { createModal.classList.remove('hidden'); document.getEleme
 function closeModal() {
   createModal.classList.add('hidden');
   document.getElementById('create-form').reset();
-  document.getElementById('char-avatar').value = '◐';
+  document.getElementById('char-avatar').value = '\u25d0';
 }
 function openRpgModal() {
   tempRpgChars = [];
@@ -324,9 +369,27 @@ function closeRpgModal() {
   document.getElementById('rpg-form').reset();
   tempRpgChars = [];
 }
+function openSettings() {
+  document.getElementById('api-key-input').value = apiKey;
+  document.getElementById('model-select').value = selectedModel;
+  settingsModal.classList.remove('hidden');
+}
+function closeSettings() { settingsModal.classList.add('hidden'); }
 
 // Events
-themeToggle.onclick = toggleTheme;
+if (themeToggle) themeToggle.onclick = toggleTheme;
+document.getElementById('settings-btn').onclick = openSettings;
+document.getElementById('close-settings').onclick = closeSettings;
+document.getElementById('cancel-settings').onclick = closeSettings;
+document.getElementById('save-settings').onclick = () => {
+  apiKey = document.getElementById('api-key-input').value.trim();
+  selectedModel = document.getElementById('model-select').value;
+  localStorage.setItem('lumen_openai_key', apiKey);
+  localStorage.setItem('lumen_model', selectedModel);
+  updateApiStatus();
+  closeSettings();
+};
+
 document.getElementById('new-char-btn').onclick = openModal;
 document.getElementById('create-first-btn').onclick = openModal;
 document.getElementById('close-modal').onclick = closeModal;
@@ -348,16 +411,13 @@ document.getElementById('create-form').onsubmit = (e) => {
     tags: document.getElementById('char-tags').value.trim(),
     dialogue: document.getElementById('char-dialogue').value.trim(),
     permission: document.querySelector('input[name="permission"]:checked')?.value || 'Public',
-    avatar: document.getElementById('char-avatar').value.trim() || '◐',
+    avatar: document.getElementById('char-avatar').value.trim() || '\u25d0'
   });
 };
 
 document.getElementById('rpg-form').onsubmit = (e) => {
   e.preventDefault();
-  if (tempRpgChars.length < 2) {
-    alert('Please add at least 2 characters to the multi-character scenario.');
-    return;
-  }
+  if (tempRpgChars.length < 2) { alert('Please add at least 2 characters.'); return; }
   createRpg({
     name: document.getElementById('rpg-name').value.trim(),
     gender: document.querySelector('input[name="rpg-gender"]:checked')?.value || 'Male',
@@ -366,8 +426,8 @@ document.getElementById('rpg-form').onsubmit = (e) => {
     background: document.getElementById('rpg-background').value.trim(),
     tags: document.getElementById('rpg-tags').value.trim(),
     visibility: document.querySelector('input[name="rpg-visibility"]:checked')?.value || 'Public',
-    avatar: document.getElementById('rpg-avatar').value.trim() || '🎮',
-    greeting: document.getElementById('rpg-opening').value.trim(),
+    avatar: document.getElementById('rpg-avatar').value.trim() || '\ud83c\udfae',
+    greeting: document.getElementById('rpg-opening').value.trim()
   });
 };
 
