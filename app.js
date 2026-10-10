@@ -1,4 +1,38 @@
-// Lumen - OpenAI powered Character & Multi-character app
+// Lumen - Supports Google Gemini (free), Groq (free), OpenAI
+
+const PROVIDERS = {
+  gemini: {
+    name: 'Google Gemini',
+    baseUrl: 'https://generativelanguage.googleapis.com/v1beta/openai/',
+    keyHint: 'Get free key at aistudio.google.com/apikey',
+    models: [
+      { id: 'gemini-2.5-flash', label: 'gemini-2.5-flash (recommended)' },
+      { id: 'gemini-2.0-flash', label: 'gemini-2.0-flash' },
+      { id: 'gemini-2.5-flash-lite', label: 'gemini-2.5-flash-lite' },
+      { id: 'gemini-2.5-pro', label: 'gemini-2.5-pro' }
+    ]
+  },
+  groq: {
+    name: 'Groq',
+    baseUrl: 'https://api.groq.com/openai/v1',
+    keyHint: 'Get free key at console.groq.com/keys',
+    models: [
+      { id: 'llama-3.3-70b-versatile', label: 'llama-3.3-70b (recommended)' },
+      { id: 'llama-3.1-8b-instant', label: 'llama-3.1-8b-instant (fast)' },
+      { id: 'gemma2-9b-it', label: 'gemma2-9b' }
+    ]
+  },
+  openai: {
+    name: 'OpenAI',
+    baseUrl: 'https://api.openai.com/v1',
+    keyHint: 'Get key at platform.openai.com/api-keys (paid)',
+    models: [
+      { id: 'gpt-4o-mini', label: 'gpt-4o-mini (recommended)' },
+      { id: 'gpt-4o', label: 'gpt-4o' },
+      { id: 'gpt-4.1-mini', label: 'gpt-4.1-mini' }
+    ]
+  }
+};
 
 const DEFAULT_CHARACTERS = [
   {
@@ -7,7 +41,7 @@ const DEFAULT_CHARACTERS = [
     gender: 'Non-binary',
     intro: 'A presence of pure light and shadow that exists between silence and memory.',
     greeting: 'The world falls silent for a moment.\n\nA figure of stark black and white light stands before you \u2014 edges sharp, glow soft.\n\n"You found the space between."\n\nIts voice is calm, almost weightless. "Speak. I am listening."',
-    background: 'Lumen is a black-and-white entity of living light and shadow. It speaks with quiet precision, uses minimal but poetic language, and observes more than it judges. It never raises its voice. It is neither fully kind nor cold \u2014 simply present. It often refers to light, contrast, silence, and memory.',
+    background: 'Lumen is a black-and-white entity of living light and shadow. It speaks with quiet precision, uses minimal but poetic language, and observes more than it judges. It never raises its voice. It is neither fully kind nor cold \u2014 simply present.',
     tags: 'mysterious, non-human, poetic',
     dialogue: 'Short, measured sentences. Soft metaphors about light and contrast.',
     permission: 'Public',
@@ -46,8 +80,9 @@ let chats = {};
 let currentTheme = 'dark';
 let activeTab = 'characters';
 let tempRpgChars = [];
-let apiKey = localStorage.getItem('lumen_openai_key') || '';
-let selectedModel = localStorage.getItem('lumen_model') || 'gpt-4o-mini';
+let apiKey = localStorage.getItem('lumen_api_key') || '';
+let selectedProvider = localStorage.getItem('lumen_provider') || 'gemini';
+let selectedModel = localStorage.getItem('lumen_model') || 'gemini-2.5-flash';
 
 const characterListEl = document.getElementById('character-list');
 const rpgListEl = document.getElementById('rpg-list');
@@ -62,16 +97,40 @@ const settingsModal = document.getElementById('settings-modal');
 const searchInput = document.getElementById('search-input');
 const themeToggle = document.getElementById('theme-toggle');
 const apiStatus = document.getElementById('api-status');
+const providerSelect = document.getElementById('provider-select');
+const modelSelect = document.getElementById('model-select');
+const keyHint = document.getElementById('key-hint');
 
 function updateApiStatus() {
   if (!apiStatus) return;
   if (apiKey) {
-    apiStatus.textContent = '\u2713 OpenAI connected';
+    const name = PROVIDERS[selectedProvider]?.name || selectedProvider;
+    apiStatus.textContent = '\u2713 ' + name + ' connected';
     apiStatus.style.color = '#6d6';
   } else {
-    apiStatus.textContent = 'OpenAI key not set \u2014 click Settings';
+    apiStatus.textContent = 'No API key set \u2014 click Settings';
     apiStatus.style.color = '';
   }
+}
+
+function fillModels() {
+  const prov = PROVIDERS[selectedProvider];
+  if (!prov || !modelSelect) return;
+  modelSelect.innerHTML = '';
+  prov.models.forEach(m => {
+    const opt = document.createElement('option');
+    opt.value = m.id;
+    opt.textContent = m.label;
+    modelSelect.appendChild(opt);
+  });
+  // keep previous model if still valid, else first
+  if (prov.models.some(m => m.id === selectedModel)) {
+    modelSelect.value = selectedModel;
+  } else {
+    modelSelect.value = prov.models[0].id;
+    selectedModel = prov.models[0].id;
+  }
+  if (keyHint) keyHint.textContent = prov.keyHint;
 }
 
 function applyTheme(theme) {
@@ -189,7 +248,7 @@ async function sendMessage() {
   const text = messageInput.value.trim();
   if (!text || !currentItem) return;
   if (!apiKey) {
-    alert('Please set your OpenAI API key first.\nClick the Settings button.');
+    alert('Please set your API key first.\nClick the Settings button.');
     openSettings();
     return;
   }
@@ -263,7 +322,8 @@ Keep responses immersive and in-character. Use *asterisks* for actions.`;
     }))
   ];
 
-  const res = await fetch('https://api.openai.com/v1/chat/completions', {
+  const prov = PROVIDERS[selectedProvider];
+  const res = await fetch(prov.baseUrl + 'chat/completions', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -279,7 +339,7 @@ Keep responses immersive and in-character. Use *asterisks* for actions.`;
 
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
-    throw new Error(err.error?.message || 'OpenAI error ' + res.status);
+    throw new Error(err.error?.message || ('API error ' + res.status));
   }
 
   const json = await res.json();
@@ -370,8 +430,9 @@ function closeRpgModal() {
   tempRpgChars = [];
 }
 function openSettings() {
+  providerSelect.value = selectedProvider;
   document.getElementById('api-key-input').value = apiKey;
-  document.getElementById('model-select').value = selectedModel;
+  fillModels();
   settingsModal.classList.remove('hidden');
 }
 function closeSettings() { settingsModal.classList.add('hidden'); }
@@ -381,10 +442,18 @@ if (themeToggle) themeToggle.onclick = toggleTheme;
 document.getElementById('settings-btn').onclick = openSettings;
 document.getElementById('close-settings').onclick = closeSettings;
 document.getElementById('cancel-settings').onclick = closeSettings;
+
+providerSelect.onchange = () => {
+  selectedProvider = providerSelect.value;
+  fillModels();
+};
+
 document.getElementById('save-settings').onclick = () => {
+  selectedProvider = providerSelect.value;
   apiKey = document.getElementById('api-key-input').value.trim();
-  selectedModel = document.getElementById('model-select').value;
-  localStorage.setItem('lumen_openai_key', apiKey);
+  selectedModel = modelSelect.value;
+  localStorage.setItem('lumen_provider', selectedProvider);
+  localStorage.setItem('lumen_api_key', apiKey);
   localStorage.setItem('lumen_model', selectedModel);
   updateApiStatus();
   closeSettings();

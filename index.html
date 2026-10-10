@@ -40,7 +40,7 @@
             <button id="create-first-btn" class="btn-primary large">Create Character</button>
             <button id="create-rpg-first-btn" class="btn-secondary large">Create Multi-Character</button>
           </div>
-          <p class="api-hint" id="api-status">OpenAI key not set — click Settings</p>
+          <p class="api-hint" id="api-status">No API key set — click Settings</p>
         </div>
       </div>
 
@@ -65,17 +65,22 @@
           <div class="modal-header"><h2>Settings</h2><button id="close-settings" class="btn-ghost">X</button></div>
           <div class="form-body">
             <div class="form-group">
-              <label>OpenAI API Key</label>
-              <input type="password" id="api-key-input" placeholder="sk-..." />
-              <div class="field-hint">Stored only in your browser.</div>
+              <label>Provider</label>
+              <select id="provider-select">
+                <option value="gemini">Google Gemini (Free)</option>
+                <option value="groq">Groq (Free & Fast)</option>
+                <option value="openai">OpenAI (Paid)</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>API Key</label>
+              <input type="password" id="api-key-input" placeholder="Paste your key here" />
+              <div class="field-hint" id="key-hint">Get free key at aistudio.google.com/apikey</div>
             </div>
             <div class="form-group">
               <label>Model</label>
               <select id="model-select">
-                <option value="gpt-4o-mini">gpt-4o-mini (recommended)</option>
-                <option value="gpt-4o">gpt-4o</option>
-                <option value="gpt-4.1-mini">gpt-4.1-mini</option>
-                <option value="gpt-4.1">gpt-4.1</option>
+                <!-- filled by JS -->
               </select>
             </div>
             <div class="form-actions">
@@ -86,7 +91,7 @@
         </div>
       </div>
 
-      <!-- Single Character (Polybuzz) -->
+      <!-- Single Character -->
       <div id="create-modal" class="modal hidden">
         <div class="modal-content scrollable">
           <div class="modal-header"><h2>Create Character</h2><button id="close-modal" class="btn-ghost">X</button></div>
@@ -116,7 +121,7 @@
         </div>
       </div>
 
-      <!-- Multi-Character (Tipsy) -->
+      <!-- Multi-Character -->
       <div id="rpg-modal" class="modal hidden">
         <div class="modal-content wide scrollable">
           <div class="modal-header"><h2>Multi-character</h2><button id="close-rpg-modal" class="btn-ghost">X</button></div>
